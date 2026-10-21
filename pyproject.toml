@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "baby-tracker"
+version = "0.1.0"
+description = "Baby-awake detection and notifications for any video stream (ffmpeg input)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Krzysztof Miąsko" }]
+dependencies = [
+    "numpy>=1.26",
+    "opencv-python>=4.9",
+    "winotify>=1.1; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+dev = ["ruff"]
+
+[project.scripts]
+baby-tracker = "baby_tracker.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
