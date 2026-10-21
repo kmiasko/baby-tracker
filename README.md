@@ -139,11 +139,13 @@ Set `BABY_TRACKER_HOME` to use a different directory. Set `BABY_TRACKER_DEBUG=1`
 
 ## Move from ImCam
 
-Earlier versions of ImCam kept these files in `~/.imcam`. Copy them:
+Earlier versions of ImCam kept `roi.json` in `~/.imcam`. baby-tracker does not read that directory.
+Copy the example settings from the `examples` directory and change them for your room:
 
     mkdir -p ~/.baby-tracker
-    cp ~/.imcam/roi.json ~/.imcam/classifier.json ~/.baby-tracker/
-    cp -r ~/.imcam/models ~/.baby-tracker/
+    cp examples/roi.json ~/.baby-tracker/
+
+Make a new classifier with `baby-tracker train`. The person detector downloads again on first use.
 
 ## Develop
 
