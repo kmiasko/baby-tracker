@@ -9,7 +9,7 @@ It does not depend on a specific camera.
 
 1. ffmpeg decodes the stream into small frames (3 frames each second).
 2. A background model finds the moving shape (the "blob") in the crib area.
-3. The shape is "upright" when it is tall, or when its top is above the lying level.
+3. The shape is "upright" when it is tall, or when its top is above the lying level. With automatic calibration, "tall" and "above" are measured against the width of the lying baby (`lying_len_mult`, `rise_mult`). With manual calibration, the lying line and `aspect_thresh` are used.
 4. If the shape stays upright for `hold_s` seconds (default 5), baby-tracker sends a notification.
 5. After a notification, baby-tracker waits `cooldown_s` seconds (default 600) before the next one.
 
@@ -23,7 +23,7 @@ Requirements: Python 3.10 or higher, and `ffmpeg` on the PATH.
     pip install .
     baby-tracker doctor
 
-`baby-tracker doctor` shows what is installed and what is missing.
+`baby-tracker doctor` shows what is installed and what is missing: ffmpeg, numpy, OpenCV, the person detector, the classifier, the notification backend, and the data directory.
 
 ## Monitor a stream
 
@@ -39,13 +39,13 @@ If ffmpeg stops, baby-tracker starts it again after 2 seconds. If no frame comes
 
 ### Use with ImCam
 
-`imcam monitor` starts baby-tracker for you. It gives baby-tracker the file `~/.imcam/track.sdp`.
+`imcam monitor`, `imcam watch --track`, and `imcam watch --record DIR` start baby-tracker for you. They give baby-tracker the file `~/.imcam/track.sdp` (in `IMCAM_HOME` if you set it). ImCam passes `--record DIR` on to baby-tracker.
 
 ## Notifications
 
-baby-tracker writes each event to the log. It also sends a desktop notification (`notify-send` on Linux, `winotify` on Windows).
+baby-tracker writes each event to the log. It also sends a desktop notification (`notify-send` on Linux, `osascript` on macOS, `winotify` on Windows; if `winotify` fails, a beep sounds).
 
-To run your own command, set `hook` in `roi.json`. The command gets two environment variables:
+To run your own command, set `hook` in `roi.json`. The command is split into words and run without a shell, so pipes and redirects do not work. Use a script for those. The command gets two environment variables:
 
 - `BABY_TRACKER_EVENT`: the event name.
 - `BABY_TRACKER_MESSAGE`: the message text.
@@ -69,6 +69,7 @@ To discover the area from a recording and save it:
     baby-tracker calibrate --auto --input recording.mp4
 
 A manual calibration stays fixed. An automatic calibration is made again on each run.
+`calibrate --auto` stops with an error if `roi.json` has a hand-drawn `roi`. Remove the `roi` key first.
 
 ## Settings
 
@@ -79,7 +80,9 @@ All settings are in `~/.baby-tracker/roi.json`. Coordinates are normalized (0 to
 | --- | --- | --- |
 | `hold_s` | 5 | Time the baby must be upright before a notification |
 | `cooldown_s` | 600 | Minimum time between notifications |
-| `aspect_thresh` | 1.5 | Height/width ratio above which the shape is upright |
+| `aspect_thresh` | 1.5 | Height/width ratio above which the shape is upright (manual calibration only) |
+| `rise_mult` | 0.4 | Automatic calibration: upright when the top is this many lying-widths above the lying top |
+| `lying_len_mult` | 0.6 | Automatic calibration: upright when the height is more than this times the lying width |
 | `fps` | 3 | Analysis frames each second |
 | `hwaccel` | `auto` | ffmpeg `-hwaccel` value (`""` turns it off) |
 | `hook` | `""` | Command to run on each event |
@@ -96,7 +99,7 @@ You need recordings and the times (in seconds) when the baby woke up in each rec
 ### 2. Label
 
 Open each recording in a video player. Write down the time of each wake as seconds from the start.
-Name a clip with this format: `FILE:T1,T2,...`. Example: `night1.mkv:1830,5400`.
+`evaluate` takes the times in `--wakes T1,T2,...`. `tune` and `train` take each clip as `--clip FILE:T1,T2,...`. Example: `night1.mkv:1830,5400`.
 A clip with no wake has no times: `night2.mkv:`.
 
 ### 3. Evaluate
